@@ -13,8 +13,8 @@ In this assignment, you will design the tables to hold data in the CSVs, import 
 -----
 
 # Data Modeling
-
-![alt text](http://url/to/img.png)
+* Below is an image of sketched out ERD models for the Pewlett Hackard employee data contained in the six CSV files.
+![alt text](https://github.com/gnivil/sql-challenge/blob/e1761d05ca17845c104b0dec5d264875aed3617e/EmployeeSQL/employee_ERD_image.png)
 
 -----
 
