@@ -6,22 +6,96 @@ It is a beautiful spring day, and it is two weeks since you have been hired as a
 
 In this assignment, you will design the tables to hold data in the CSVs, import the CSVs into a SQL database, and answer questions about the data. In other words, you will perform:
 
-* Data Modeling and Data Engineering
+* Data Modeling
+
+* Data Engineering
 
 * Data Analysis
-
 -----
 
 # Data Modeling
-* Below is an image of sketched out ERD models for the Pewlett Hackard employee data contained in the six CSV files.
+Entity relationship diagram (ERD) for the Pewlett Hackard employee data contained in their remaining six CSV files.
 ![alt text](https://github.com/gnivil/sql-challenge/blob/e1761d05ca17845c104b0dec5d264875aed3617e/EmployeeSQL/employee_ERD_image.png)
 
 -----
 
-# Set up jupyter notebook
-
+# Data Engineering
+* Table schema for each of the six CSV files, specifying data types, primary keys, foreign keys, and other constraints.
 ~~~~sql
---List the tables for each of the six CSV files
+CREATE TABLE "titles" (
+    "title_id" VARCHAR   NOT NULL,
+    "title" VARCHAR   NOT NULL,
+    CONSTRAINT "pk_titles" PRIMARY KEY (
+        "title_id"
+     )
+);
+
+CREATE TABLE "employees" (
+    "emp_no" INT   NOT NULL,
+    "emp_title_id" VARCHAR   NOT NULL,
+    "birth_date" DATE   NOT NULL,
+    "first_name" VARCHAR   NOT NULL,
+    "last_name" VARCHAR   NOT NULL,
+    "sex" VARCHAR   NOT NULL,
+    "hire_date" DATE   NOT NULL,
+    CONSTRAINT "pk_employees" PRIMARY KEY (
+        "emp_no"
+     )
+);
+
+CREATE TABLE "departments" (
+    "dept_no" VARCHAR   NOT NULL,
+    "dept_name" VARCHAR   NOT NULL,
+    CONSTRAINT "pk_departments" PRIMARY KEY (
+        "dept_no"
+     )
+);
+
+CREATE TABLE "dept_emp" (
+    "emp_no" INT   NOT NULL,
+    "dept_no" VARCHAR   NOT NULL,
+    CONSTRAINT "pk_dept_emp" PRIMARY KEY (
+        "emp_no","dept_no"
+     )
+);
+
+CREATE TABLE "dept_manager" (
+    "dept_no" VARCHAR   NOT NULL,
+    "emp_no" INT   NOT NULL,
+    CONSTRAINT "pk_dept_manager" PRIMARY KEY (
+        "dept_no","emp_no"
+     )
+);
+
+CREATE TABLE "salaries" (
+    "emp_no" INT   NOT NULL,
+    "salary" INT   NOT NULL,
+    CONSTRAINT "pk_salaries" PRIMARY KEY (
+        "emp_no"
+     )
+);
+
+ALTER TABLE "employees" ADD CONSTRAINT "fk_employees_emp_title_id" FOREIGN KEY("emp_title_id")
+REFERENCES "titles" ("title_id");
+
+ALTER TABLE "dept_emp" ADD CONSTRAINT "fk_dept_emp_emp_no" FOREIGN KEY("emp_no")
+REFERENCES "employees" ("emp_no");
+
+ALTER TABLE "dept_emp" ADD CONSTRAINT "fk_dept_emp_dept_no" FOREIGN KEY("dept_no")
+REFERENCES "departments" ("dept_no");
+
+ALTER TABLE "dept_manager" ADD CONSTRAINT "fk_dept_manager_dept_no" FOREIGN KEY("dept_no")
+REFERENCES "departments" ("dept_no");
+
+ALTER TABLE "dept_manager" ADD CONSTRAINT "fk_dept_manager_emp_no" FOREIGN KEY("emp_no")
+REFERENCES "employees" ("emp_no");
+
+ALTER TABLE "salaries" ADD CONSTRAINT "fk_salaries_emp_no" FOREIGN KEY("emp_no")
+REFERENCES "employees" ("emp_no");
+~~~~
+
+* Import each CSV file into the corresponding SQL table.
+~~~~sql
 SELECT * FROM titles;
 SELECT * FROM employees;
 SELECT * FROM departments;
@@ -29,3 +103,98 @@ SELECT * FROM dept_emp;
 SELECT * FROM dept_manager;
 SELECT * FROM salaries;
 ~~~~
+-----
+
+# Data Analysis
+
+* List the following details of each employee: employee number, last name, first name, sex, and salary.
+~~~~sql
+SELECT A.emp_no,A.last_name,A.first_name,A.sex,B.salary 
+FROM employees AS A 
+LEFT JOIN salaries AS B 
+ON A.emp_no=B.emp_no;
+~~~~
+
+* List first name, last name, and hire date for employees who were hired in 1986.
+~~~~sql
+SELECT first_name, last_name, hire_date 
+FROM employees
+WHERE date_part('year', hire_date) = '1986';
+~~~~
+
+* List the manager of each department with the following information: department number, department name, the manager's employee number, last name, first name.
+~~~~sql
+SELECT A.dept_no, B.dept_name, A.emp_no, C.last_name, C.first_name
+FROM dept_manager AS A
+LEFT JOIN departments AS B
+ON A.dept_no=B.dept_no  
+LEFT JOIN employees AS C
+ON A.emp_no=C.emp_no;
+~~~~
+
+* List the department of each employee with the following information: employee number, last name, first name, and department name.
+~~~~sql
+SELECT A.emp_no,B.last_name,B.first_name,C.dept_name
+FROM dept_emp AS A
+LEFT JOIN employees AS B
+ON A.emp_no=B.emp_no
+LEFT JOIN departments AS C
+ON A.dept_no=C.dept_no;
+~~~~
+
+* List first name, last name, and sex for employees whose first name is "Hercules" and last names begin with "B."
+~~~~sql
+SELECT first_name, last_name, sex 
+FROM employees
+Where first_name = 'Hercules'
+AND last_name LIKE 'B%';
+~~~~
+
+* List all employees in the Sales department, including their employee number, last name, first name, and department name.
+~~~~sql
+SELECT A.emp_no,B.last_name,B.first_name,C.dept_name
+FROM dept_emp AS A
+LEFT JOIN employees AS B
+ON A.emp_no=B.emp_no
+LEFT JOIN departments AS C
+ON A.dept_no=C.dept_no
+WHERE C.dept_name='Sales';
+~~~~
+
+* List all employees in the Sales and Development departments, including their employee number, last name, first name, and department name.
+~~~~sql
+SELECT A.emp_no,B.last_name,B.first_name,C.dept_name
+FROM dept_emp AS A
+LEFT JOIN employees AS B
+ON A.emp_no=B.emp_no
+LEFT JOIN departments AS C
+ON A.dept_no=C.dept_no
+WHERE C.dept_name='Sales'
+OR C.dept_name='Development';
+~~~~
+
+* In descending order, list the frequency count of employee last names, i.e., how many employees share each last name.
+~~~~sql
+SELECT last_name, COUNT(*) 
+FROM employees
+GROUP BY last_name 
+ORDER BY COUNT(*) DESC;
+~~~~
+-----
+
+# Epilogue
+* Search your ID number
+~~~~sql
+SELECT A.emp_no,A.emp_title_id,B.title,A.birth_date,A.first_name,A.last_name,A.sex,A.hire_date,C.dept_no,D.dept_name,E.salary
+FROM employees AS A
+LEFT JOIN titles AS B
+ON A.emp_title_id=B.title_id
+LEFT JOIN dept_emp AS C
+ON A.emp_no=C.emp_no
+LEFT JOIN departments AS D
+ON C.dept_no=D.dept_no
+LEFT JOIN salaries as E
+ON A.emp_no=E.emp_no
+WHERE A.emp_no='499942';
+~~~~
+-----
