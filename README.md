@@ -192,4 +192,5 @@ LEFT JOIN salaries as E
 ON A.emp_no=E.emp_no
 WHERE A.emp_no='499942';
 ~~~~
+
 -----
